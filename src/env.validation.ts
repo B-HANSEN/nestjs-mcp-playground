@@ -1,6 +1,6 @@
 type Environment = Record<string, string | undefined>;
 
-const requiredVariables = ['GRAPHQL_API_URL', 'GRAPHQL_API_TOKEN'] as const;
+const requiredVariables = ['GRAPHQL_API_URL'] as const;
 
 export function validateEnv(config: Environment) {
   const missingVariables = requiredVariables.filter((key) => !config[key]);

@@ -1,6 +1,54 @@
 # MCP NestJS
 
+Thin NestJS MCP adapter with a browser chat UI and controlled travel tools.
 
+## Local development
+
+Install dependencies:
+
+```bash
+npm install
+```
+
+Create a local environment file:
+
+```bash
+cp .env.example .env
+```
+
+Run the app:
+
+```bash
+npm run start:dev
+```
+
+Open the chat UI at `http://localhost:3000`.
+
+Required environment variables:
+
+| Variable | Description |
+| --- | --- |
+| `GRAPHQL_API_URL` | URL of the existing GraphQL API. |
+| `GRAPHQL_API_TOKEN` | Optional token for GraphQL APIs that require bearer authentication. |
+| `GRAPHQL_BRAND_ID` | Optional brand header sent as `x-brand-id`. |
+| `GRAPHQL_LOCALE` | Optional locale header sent as `x-locale`, e.g. `de`, `at`, `ch`, `es`. |
+| `GRAPHQL_AIRPORT_SEARCH_QUERY` | Optional GraphQL query override for airport search. Must accept a `$query` string variable. |
+| `AI_PROVIDER` | Optional. Use `local`, `openai`, or `anthropic`. Defaults to `local`. |
+| `OPENAI_API_KEY` | Required only when `AI_PROVIDER=openai`. |
+| `OPENAI_MODEL` | Optional OpenAI model name. Defaults to `gpt-4.1-mini`. |
+| `ANTHROPIC_API_KEY` | Required only when `AI_PROVIDER=anthropic`. |
+| `ANTHROPIC_MODEL` | Optional Claude model name. Defaults to `claude-sonnet-4-6`. |
+
+The UI posts chat messages to `POST /api/chat`. The chat layer can call domain tools like `search_airports`; those tools call GraphQL internally. No generic GraphQL execution tool is exposed to the browser or model.
+
+Current tool:
+
+| Tool | Backend service |
+| --- | --- |
+| `search_airports` | `AirportMcpToolsService.searchAirports()` |
+| `recommend_hotels` | `HotelRecommendationService.recommendHotels()` |
+
+`recommend_hotels` currently returns an Amadeus hotel search URL. The available GraphQL endpoint does not return hotel cards, so the UI renders a search link plus limitations instead of invented hotel results.
 
 ## Getting started
 
