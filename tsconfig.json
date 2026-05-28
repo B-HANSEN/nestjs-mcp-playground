@@ -13,6 +13,12 @@
     "incremental": true,
     "strict": true,
     "skipLibCheck": true,
-    "strictPropertyInitialization": false
+    "strictPropertyInitialization": false,
+    "paths": {
+      "@modelcontextprotocol/sdk/server": ["node_modules/@modelcontextprotocol/sdk/dist/esm/server/index"],
+      "@modelcontextprotocol/sdk/server/*": ["node_modules/@modelcontextprotocol/sdk/dist/esm/server/*"],
+      "@modelcontextprotocol/sdk/types": ["node_modules/@modelcontextprotocol/sdk/dist/esm/types"],
+      "zod/v4": ["node_modules/zod/v4"]
+    }
   }
 }

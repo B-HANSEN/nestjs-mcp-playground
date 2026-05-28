@@ -1,0 +1,17 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "outDir": "./dist"
+  },
+  "include": [
+    "src/mcp-main.ts",
+    "src/mcp-stdio.ts",
+    "src/mcp-entry/**/*",
+    "src/modules/airport/**/*",
+    "src/modules/hotel/**/*",
+    "src/modules/graphql-client/**/*",
+    "src/env.validation.ts"
+  ]
+}
