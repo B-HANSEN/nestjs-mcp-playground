@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { AirportMcpToolsService, AirportSearchResult } from '../airport/airport-mcp-tools.service';
 import { HotelRecommendationService } from '../hotel/hotel-recommendation.service';
@@ -74,6 +74,7 @@ interface AnthropicMessageResponse {
 
 @Injectable()
 export class ChatService {
+  private readonly logger = new Logger(ChatService.name);
   private readonly systemPrompt = [
     'You are a helpful travel assistant.',
     'Use tools when the user asks for factual travel data, airports, hotel recommendations, packages, or availability.',
@@ -245,15 +246,8 @@ export class ChatService {
       });
     }
 
-    const finalCompletion = await this.createOpenAiCompletion(
-      apiKey,
-      model,
-      [...openAiMessages, firstMessage, ...toolMessages],
-      true,
-    );
-
     return {
-      reply: finalCompletion.choices?.[0]?.message.content ?? this.fallbackReply(airports, hotelRecommendations),
+      reply: this.fallbackReply(airports, hotelRecommendations),
       airports,
       hotelRecommendations,
       toolResults,
@@ -308,25 +302,8 @@ export class ChatService {
       });
     }
 
-    const finalCompletion = await this.createAnthropicMessage(
-      apiKey,
-      model,
-      [
-        ...anthropicMessages,
-        {
-          role: 'assistant',
-          content: firstCompletion.content ?? [],
-        },
-        {
-          role: 'user',
-          content: toolResultBlocks,
-        },
-      ],
-      true,
-    );
-
     return {
-      reply: this.getAnthropicText(finalCompletion) || this.fallbackReply(airports, hotelRecommendations),
+      reply: this.fallbackReply(airports, hotelRecommendations),
       airports,
       hotelRecommendations,
       toolResults,
@@ -356,6 +333,7 @@ export class ChatService {
     const responseText = await response.text();
 
     if (!response.ok) {
+      this.logger.error(`OpenAI 500 — model: ${model}, tools: ${includeTools}, schema: ${JSON.stringify(this.recommendHotelsJsonSchema)}`);
       throw new Error(`OpenAI request failed with status ${response.status}: ${responseText}`);
     }
 
@@ -426,7 +404,10 @@ export class ChatService {
     return {
       type: 'object',
       properties: {
-        destinationQuery: { type: 'string' },
+        destinationQuery: {
+          type: 'string',
+          description: 'Destination the user mentioned, e.g. "Ägypten", "Tunesien", "Mallorca".',
+        },
         startDate: { type: 'string', description: 'YYYY-MM-DD' },
         endDate: { type: 'string', description: 'YYYY-MM-DD' },
         durationNights: { type: 'number' },
@@ -442,10 +423,12 @@ export class ChatService {
               },
             },
             required: ['adults'],
-            additionalProperties: false,
           },
         },
-        maxPriceEur: { type: 'number' },
+        maxPriceEur: {
+          type: 'number',
+          description: 'Maximum nightly budget in EUR for all rooms combined (total per night, NOT per room or per person). The service multiplies this by durationNights to get the total trip price sent to the IBE. Convert from user\'s currency to EUR if needed (e.g. 150 USD ≈ 138 EUR). If the user says "per day" or "pro Tag", treat it as the nightly budget.',
+        },
         beachfront: { type: 'boolean' },
         nearBeach: { type: 'boolean' },
         pool: { type: 'boolean' },
@@ -465,7 +448,6 @@ export class ChatService {
         seaView: { type: 'boolean' },
       },
       required: ['rooms'],
-      additionalProperties: false,
     };
   }
 
@@ -549,6 +531,7 @@ export class ChatService {
     hotelRecommendations: RecommendHotelsResult[],
     toolResults: ChatToolResult[],
   ): Promise<RecommendHotelsResult> {
+    this.logger.log(`recommend_hotels raw input from AI: ${JSON.stringify(input)}`);
     const recommendHotelsInput = this.normalizeRecommendHotelsInput(input, fallbackMessage);
     const result = await this.hotelRecommendationService.recommendHotels(recommendHotelsInput);
 
