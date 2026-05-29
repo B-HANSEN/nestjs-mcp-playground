@@ -1,5 +1,5 @@
 {
-  "name": "mcp-server",
+  "name": "nestjs-mcp-playground",
   "version": "0.1.0",
   "private": true,
   "description": "Thin NestJS MCP adapter over an existing GraphQL API.",
