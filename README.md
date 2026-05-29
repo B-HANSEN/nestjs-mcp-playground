@@ -1,141 +1,89 @@
-# MCP NestJS
+# nestjs-mcp-playground
 
-Thin NestJS MCP adapter with a browser chat UI and controlled travel tools.
+A NestJS project with two independent entry points: a travel assistant **Chat API** and an **MCP server** for Claude Desktop. Both share the same domain services (airport search, hotel recommendations) backed by a GraphQL API.
+
+## Architecture
+
+```
+src/
+├── main.ts               # Chat API entry point (port 3000)
+├── mcp-main.ts           # MCP HTTP server entry point (port 3001)
+├── mcp-stdio.ts          # MCP stdio entry point (for Claude Desktop)
+├── mcp-entry/            # NestJS app context used by both MCP entry points
+│   ├── mcp-app.module.ts
+│   └── mcp-tools.service.ts   # Registers search_airports + recommend_hotels as MCP tools
+└── modules/
+    ├── airport/          # AirportService — searches airports via GraphQL
+    ├── hotel/            # HotelRecommendationService — builds Amadeus hotel search URLs
+    ├── chat/             # ChatService — travel assistant with OpenAI / Anthropic / local backends
+    ├── graphql-client/   # Shared GraphQL HTTP client
+    └── tool-registry/    # Registers shared tools on chat app startup
+```
+
+## Chat API (port 3000)
+
+A travel assistant accessible via browser or REST. Supports three backends configured via `AI_PROVIDER`:
+
+- **`local`** (default) — rule-based keyword matching, no LLM required
+- **`openai`** — GPT with function calling (`search_airports`, `recommend_hotels`)
+- **`anthropic`** — Claude with tool use (`search_airports`, `recommend_hotels`)
+
+The chat layer calls the same domain services as the MCP server. No raw GraphQL is exposed to the browser or model.
+
+Endpoints:
+
+| Method | Path | Description |
+| --- | --- | --- |
+| `POST` | `/api/chat` | Main travel assistant chat |
+| `POST` | `/api/airport-chat` | Airport-only chat endpoint |
+| `GET` | `/health` | Health check |
+
+## MCP Server (port 3001 / stdio)
+
+Implements the [Model Context Protocol](https://modelcontextprotocol.io) so Claude Desktop can call travel tools directly.
+
+Endpoints:
+
+| Method | Path | Description |
+| --- | --- | --- |
+| `POST` | `/mcp` | Stateless MCP tool call (StreamableHTTP) |
+
+For Claude Desktop, use the stdio entry point (`mcp-stdio.ts`) via `npm run start:mcp:stdio`.
+
+## Tools
+
+Both the Chat API and MCP server expose the same tools:
+
+| Tool | Description | Backend |
+| --- | --- | --- |
+| `search_airports` | Find departure airports for a city or place | `AirportService` → GraphQL |
+| `recommend_hotels` | Build a hotel search URL from traveller needs | `HotelRecommendationService` → Amadeus IBE URL |
+
+`recommend_hotels` returns a search URL, not hotel cards. The GraphQL backend does not return hotel inventory.
 
 ## Local development
 
-Install dependencies:
-
 ```bash
 npm install
-```
-
-Create a local environment file:
-
-```bash
 cp .env.example .env
-```
-
-Run the app:
-
-```bash
-npm run start:dev
+# fill in GRAPHQL_API_URL and optionally AI_PROVIDER + API keys
+npm run start:dev        # Chat API on :3000
+npm run start:mcp:dev    # MCP HTTP server on :3001
 ```
 
 Open the chat UI at `http://localhost:3000`.
 
-Required environment variables:
+## Environment variables
 
 | Variable | Description |
 | --- | --- |
-| `GRAPHQL_API_URL` | URL of the existing GraphQL API. |
-| `GRAPHQL_API_TOKEN` | Optional token for GraphQL APIs that require bearer authentication. |
-| `GRAPHQL_BRAND_ID` | Optional brand header sent as `x-brand-id`. |
-| `GRAPHQL_LOCALE` | Optional locale header sent as `x-locale`, e.g. `de`, `at`, `ch`, `es`. |
-| `GRAPHQL_AIRPORT_SEARCH_QUERY` | Optional GraphQL query override for airport search. Must accept a `$query` string variable. |
-| `AI_PROVIDER` | Optional. Use `local`, `openai`, or `anthropic`. Defaults to `local`. |
-| `OPENAI_API_KEY` | Required only when `AI_PROVIDER=openai`. |
-| `OPENAI_MODEL` | Optional OpenAI model name. Defaults to `gpt-4.1-mini`. |
-| `ANTHROPIC_API_KEY` | Required only when `AI_PROVIDER=anthropic`. |
-| `ANTHROPIC_MODEL` | Optional Claude model name. Defaults to `claude-sonnet-4-6`. |
-
-The UI posts chat messages to `POST /api/chat`. The chat layer can call domain tools like `search_airports`; those tools call GraphQL internally. No generic GraphQL execution tool is exposed to the browser or model.
-
-Current tool:
-
-| Tool | Backend service |
-| --- | --- |
-| `search_airports` | `AirportMcpToolsService.searchAirports()` |
-| `recommend_hotels` | `HotelRecommendationService.recommendHotels()` |
-
-`recommend_hotels` currently returns an Amadeus hotel search URL. The available GraphQL endpoint does not return hotel cards, so the UI renders a search link plus limitations instead of invented hotel results.
-
-## Getting started
-
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
-
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
-
-## Add your files
-
-* [Create](https://docs.gitlab.com/user/project/repository/web_editor/#create-a-file) or [upload](https://docs.gitlab.com/user/project/repository/web_editor/#upload-a-file) files
-* [Add files using the command line](https://docs.gitlab.com/topics/git/add_files/#add-files-to-a-git-repository) or push an existing Git repository with the following command:
-
-```
-cd existing_repo
-git remote add origin https://gitlab.com/urlaubsguru/uniqversum/backend-galaxy/protoype/mcp-nestjs.git
-git branch -M main
-git push -uf origin main
-```
-
-## Integrate with your tools
-
-* [Set up project integrations](https://gitlab.com/urlaubsguru/uniqversum/backend-galaxy/protoype/mcp-nestjs/-/settings/integrations)
-
-## Collaborate with your team
-
-* [Invite team members and collaborators](https://docs.gitlab.com/user/project/members/)
-* [Create a new merge request](https://docs.gitlab.com/user/project/merge_requests/creating_merge_requests/)
-* [Automatically close issues from merge requests](https://docs.gitlab.com/user/project/issues/managing_issues/#closing-issues-automatically)
-* [Enable merge request approvals](https://docs.gitlab.com/user/project/merge_requests/approvals/)
-* [Set auto-merge](https://docs.gitlab.com/user/project/merge_requests/auto_merge/)
-
-## Test and Deploy
-
-Use the built-in continuous integration in GitLab.
-
-* [Get started with GitLab CI/CD](https://docs.gitlab.com/ci/quick_start/)
-* [Analyze your code for known vulnerabilities with Static Application Security Testing (SAST)](https://docs.gitlab.com/user/application_security/sast/)
-* [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/topics/autodevops/requirements/)
-* [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/user/clusters/agent/)
-* [Set up protected environments](https://docs.gitlab.com/ci/environments/protected_environments/)
-
-***
-
-# Editing this README
-
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thanks to [makeareadme.com](https://www.makeareadme.com/) for this template.
-
-## Suggestions for a good README
-
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
-
-## Name
-Choose a self-explaining name for your project.
-
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
-
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
-
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
-
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
-
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
-
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
-
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
-
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
-
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
-
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
-
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
-
-## License
-For open source projects, say how it is licensed.
-
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+| `GRAPHQL_API_URL` | GraphQL API URL (required) |
+| `GRAPHQL_API_TOKEN` | Bearer token for authenticated GraphQL APIs |
+| `GRAPHQL_BRAND_ID` | Optional `x-brand-id` header |
+| `GRAPHQL_LOCALE` | Optional `x-locale` header, e.g. `de`, `at`, `ch` |
+| `GRAPHQL_AIRPORT_SEARCH_QUERY` | Override the airport search query. Must accept a `$query: String!` variable. |
+| `AI_PROVIDER` | `local` (default), `openai`, or `anthropic` |
+| `OPENAI_API_KEY` | Required when `AI_PROVIDER=openai` |
+| `OPENAI_MODEL` | OpenAI model name. Defaults to `gpt-4.1-mini` |
+| `ANTHROPIC_API_KEY` | Required when `AI_PROVIDER=anthropic` |
+| `ANTHROPIC_MODEL` | Claude model name. Defaults to `claude-sonnet-4-6` |
