@@ -19,6 +19,15 @@ async function bootstrap() {
   const app = express();
   app.use(express.json());
 
+  app.use((_req, res, next) => {
+    const apiKey = process.env.API_KEY;
+    if (apiKey && _req.headers['x-api-key'] !== apiKey) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+    next();
+  });
+
   // Each POST is stateless: fresh transport + server per request
   app.post('/mcp', async (req, res) => {
     try {

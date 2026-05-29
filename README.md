@@ -77,6 +77,7 @@ Open the chat UI at `http://localhost:3000`.
 
 | Variable | Description |
 | --- | --- |
+| `API_KEY` | Required in `x-api-key` header for all API requests. Leave unset to disable auth (local dev). |
 | `GRAPHQL_API_URL` | GraphQL API URL (required) |
 | `GRAPHQL_API_TOKEN` | Bearer token for authenticated GraphQL APIs |
 | `GRAPHQL_BRAND_ID` | Optional `x-brand-id` header |
