@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { AirportMcpToolsService, AirportSearchResult } from '../airport/airport-mcp-tools.service';
+import { AirportService, AirportSearchResult } from '../airport/airport.service';
 import { HotelRecommendationService } from '../hotel/hotel-recommendation.service';
 import { AmadeusBoardType, AmadeusRoomType, RecommendHotelsInput, RecommendHotelsResult } from '../hotel/hotel.types';
 import { ChatMessage, ChatRequest, ChatResponse, ChatToolResult } from './chat.types';
@@ -88,7 +88,7 @@ export class ChatService {
 
   constructor(
     private readonly configService: ConfigService,
-    private readonly airportMcpToolsService: AirportMcpToolsService,
+    private readonly airportService: AirportService,
     private readonly hotelRecommendationService: HotelRecommendationService,
   ) {}
 
@@ -141,7 +141,7 @@ export class ChatService {
     }
 
     try {
-      const airports = await this.airportMcpToolsService.searchAirports(query);
+      const airports = await this.airportService.searchAirports(query);
       return this.airportSearchResponse(query, airports, [
         {
           toolName: 'search_airports',
@@ -513,7 +513,7 @@ export class ChatService {
     toolResults: ChatToolResult[],
   ): Promise<AirportSearchResult[]> {
     const query = typeof input.query === 'string' ? input.query : fallbackQuery;
-    const result = await this.airportMcpToolsService.searchAirports(query);
+    const result = await this.airportService.searchAirports(query);
 
     airports.push(...result);
     toolResults.push({

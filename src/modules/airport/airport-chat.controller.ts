@@ -1,5 +1,5 @@
 import { Body, Controller, Post } from '@nestjs/common';
-import { AirportMcpToolsService, AirportSearchResult } from './airport-mcp-tools.service';
+import { AirportService, AirportSearchResult } from './airport.service';
 
 interface AirportChatRequest {
   message?: string;
@@ -12,7 +12,7 @@ interface AirportChatResponse {
 
 @Controller('api/airport-chat')
 export class AirportChatController {
-  constructor(private readonly airportMcpToolsService: AirportMcpToolsService) {}
+  constructor(private readonly airportService: AirportService) {}
 
   @Post()
   async chat(@Body() body: AirportChatRequest): Promise<AirportChatResponse> {
@@ -29,7 +29,7 @@ export class AirportChatController {
     let airports: AirportSearchResult[];
 
     try {
-      airports = await this.airportMcpToolsService.searchAirports(query);
+      airports = await this.airportService.searchAirports(query);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown airport search error.';
 

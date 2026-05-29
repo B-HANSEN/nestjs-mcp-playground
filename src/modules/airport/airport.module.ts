@@ -1,12 +1,12 @@
 import { Module } from '@nestjs/common';
 import { GraphqlClientModule } from '../graphql-client/graphql-client.module';
 import { AirportChatController } from './airport-chat.controller';
-import { AirportMcpToolsService } from './airport-mcp-tools.service';
+import { AirportService } from './airport.service';
 
 @Module({
   imports: [GraphqlClientModule],
   controllers: [AirportChatController],
-  providers: [AirportMcpToolsService],
-  exports: [AirportMcpToolsService],
+  providers: [AirportService],
+  exports: [AirportService],
 })
 export class AirportModule {}

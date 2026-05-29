@@ -1,4 +1,4 @@
-import { AirportSearchResult } from '../airport/airport-mcp-tools.service';
+import { AirportSearchResult } from '../airport/airport.service';
 import { RecommendHotelsResult } from '../hotel/hotel.types';
 
 export interface ChatMessage {

@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import type { McpServer as McpServerType } from '@modelcontextprotocol/sdk/server/mcp';
-import { AirportMcpToolsService } from '../modules/airport/airport-mcp-tools.service';
+import { AirportService } from '../modules/airport/airport.service';
 import { HotelRecommendationService } from '../modules/hotel/hotel-recommendation.service';
 import { RecommendHotelsInput } from '../modules/hotel/hotel.types';
 import { z } from 'zod/v4';
@@ -14,7 +14,7 @@ const { McpServer } = require(nodePath.join(serverCjsDir, 'mcp.js')) as {
 @Injectable()
 export class McpToolsService {
   constructor(
-    private readonly airportService: AirportMcpToolsService,
+    private readonly airportService: AirportService,
     private readonly hotelService: HotelRecommendationService,
   ) {}
 

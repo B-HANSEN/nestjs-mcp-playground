@@ -25,17 +25,13 @@ export interface AirportSearchResult {
 type AirportSearchData = Record<string, unknown>;
 
 @Injectable()
-export class AirportMcpToolsService {
-  private readonly logger = new Logger(AirportMcpToolsService.name);
+export class AirportService {
+  private readonly logger = new Logger(AirportService.name);
 
   constructor(
     private readonly configService: ConfigService,
     private readonly graphqlClientService: GraphqlClientService,
   ) {}
-
-  registerTools() {
-    this.logger.log('Airport MCP tools ready. search_airports can be backed by GraphQL.');
-  }
 
   async searchAirports(query: string): Promise<AirportSearchResult[]> {
     this.logger.log(`Airport search requested for "${query}".`);

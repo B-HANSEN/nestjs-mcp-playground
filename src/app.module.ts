@@ -6,7 +6,7 @@ import { AirportModule } from './modules/airport/airport.module';
 import { ChatModule } from './modules/chat/chat.module';
 import { GraphqlClientModule } from './modules/graphql-client/graphql-client.module';
 import { HotelModule } from './modules/hotel/hotel.module';
-import { McpModule } from './modules/mcp/mcp.module';
+import { ToolRegistryModule } from './modules/tool-registry/tool-registry.module';
 
 @Module({
   imports: [
@@ -19,7 +19,7 @@ import { McpModule } from './modules/mcp/mcp.module';
     AirportModule,
     HotelModule,
     ChatModule,
-    McpModule,
+    ToolRegistryModule,
   ],
   controllers: [HealthController],
 })
