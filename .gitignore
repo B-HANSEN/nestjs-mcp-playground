@@ -7,3 +7,5 @@ yarn-debug.log*
 yarn-error.log*
 .DS_Store
 TODO.md
+.qodo
+.claude/settings.local.json
