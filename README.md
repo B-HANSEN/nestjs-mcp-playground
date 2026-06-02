@@ -1,58 +1,34 @@
 # nestjs-mcp-playground
 
-A NestJS project with two independent entry points: a travel assistant **Chat API** and an **MCP server** for Claude Desktop. Both share the same domain services (airport search, hotel recommendations) backed by a GraphQL API.
+A NestJS **MCP server** that exposes travel tools (airport search, hotel recommendations) to Claude Desktop via the [Model Context Protocol](https://modelcontextprotocol.io). Domain services are backed by a GraphQL API.
 
 ## Architecture
 
 ```
 src/
-├── main.ts               # Chat API entry point (port 3000)
 ├── mcp-main.ts           # MCP HTTP server entry point (port 3001)
 ├── mcp-stdio.ts          # MCP stdio entry point (for Claude Desktop)
-├── mcp-entry/            # NestJS app context used by both MCP entry points
+├── mcp-entry/            # NestJS app context for MCP
 │   ├── mcp-app.module.ts
 │   └── mcp-tools.service.ts   # Registers search_airports + recommend_hotels as MCP tools
 └── modules/
     ├── airport/          # AirportService — searches airports via GraphQL
     ├── hotel/            # HotelRecommendationService — builds Amadeus hotel search URLs
-    ├── chat/             # ChatService — travel assistant with OpenAI / Anthropic / local backends
-    ├── graphql-client/   # Shared GraphQL HTTP client
-    └── tool-registry/    # Registers shared tools on chat app startup
+    └── graphql-client/   # Shared GraphQL HTTP client
 ```
-
-## Chat API (port 3000)
-
-A travel assistant accessible via browser or REST. Supports three backends configured via `AI_PROVIDER`:
-
-- **`local`** (default) — rule-based keyword matching, no LLM required
-- **`openai`** — GPT with function calling (`search_airports`, `recommend_hotels`)
-- **`anthropic`** — Claude with tool use (`search_airports`, `recommend_hotels`)
-
-The chat layer calls the same domain services as the MCP server. No raw GraphQL is exposed to the browser or model.
-
-Endpoints:
-
-| Method | Path | Description |
-| --- | --- | --- |
-| `POST` | `/api/chat` | Main travel assistant chat |
-| `POST` | `/api/airport-chat` | Airport-only chat endpoint |
-| `GET` | `/health` | Health check |
 
 ## MCP Server (port 3001 / stdio)
 
-Implements the [Model Context Protocol](https://modelcontextprotocol.io) so Claude Desktop can call travel tools directly.
+Two entry points are available:
 
-Endpoints:
-
-| Method | Path | Description |
+| Entry point | Command | Use case |
 | --- | --- | --- |
-| `POST` | `/mcp` | Stateless MCP tool call (StreamableHTTP) |
+| `mcp-stdio.ts` | `npm run start:mcp-stdio` | Claude Desktop (stdio transport) |
+| `mcp-main.ts` | `npm run start:mcp` | HTTP stateless transport (port 3001) |
 
-For Claude Desktop, use the stdio entry point (`mcp-stdio.ts`) via `npm run start:mcp:stdio`.
+For the HTTP transport, each `POST /mcp` request gets a fresh server instance (stateless).
 
 ## Tools
-
-Both the Chat API and MCP server expose the same tools:
 
 | Tool | Description | Backend |
 | --- | --- | --- |
@@ -66,25 +42,19 @@ Both the Chat API and MCP server expose the same tools:
 ```bash
 npm install
 cp .env.example .env
-# fill in GRAPHQL_API_URL and optionally AI_PROVIDER + API keys
-npm run start:dev        # Chat API on :3000
-npm run start:mcp:dev    # MCP HTTP server on :3001
+# fill in GRAPHQL_API_URL
+npm run build
+npm run start:mcp-stdio   # stdio (Claude Desktop)
+npm run start:mcp         # HTTP on :3001
 ```
-
-Open the chat UI at `http://localhost:3000`.
 
 ## Environment variables
 
-| Variable | Description |
-| --- | --- |
-| `API_KEY` | Required in `x-api-key` header for all API requests. Leave unset to disable auth (local dev). |
-| `GRAPHQL_API_URL` | GraphQL API URL (required) |
-| `GRAPHQL_API_TOKEN` | Bearer token for authenticated GraphQL APIs |
-| `GRAPHQL_BRAND_ID` | Optional `x-brand-id` header |
-| `GRAPHQL_LOCALE` | Optional `x-locale` header, e.g. `de`, `at`, `ch` |
-| `GRAPHQL_AIRPORT_SEARCH_QUERY` | Override the airport search query. Must accept a `$query: String!` variable. |
-| `AI_PROVIDER` | `local` (default), `openai`, or `anthropic` |
-| `OPENAI_API_KEY` | Required when `AI_PROVIDER=openai` |
-| `OPENAI_MODEL` | OpenAI model name. Defaults to `gpt-4.1-mini` |
-| `ANTHROPIC_API_KEY` | Required when `AI_PROVIDER=anthropic` |
-| `ANTHROPIC_MODEL` | Claude model name. Defaults to `claude-sonnet-4-6` |
+| Variable | Required | Description |
+| --- | --- | --- |
+| `GRAPHQL_API_URL` | yes | GraphQL API URL |
+| `GRAPHQL_API_TOKEN` | no | Bearer token for authenticated GraphQL APIs |
+| `GRAPHQL_BRAND_ID` | no | Optional `x-brand-id` header |
+| `GRAPHQL_LOCALE` | no | Optional `x-locale` header, e.g. `de`, `at`, `ch` |
+| `GRAPHQL_AIRPORT_SEARCH_QUERY` | no | Override the airport search query. Must accept a `$query: String!` variable. |
+| `API_KEY` | no | Required in `x-api-key` header for HTTP transport requests. Leave unset to disable auth. |
