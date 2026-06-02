@@ -18,10 +18,6 @@ export class GraphqlClientService {
     return this.configService.get<string>('GRAPHQL_API_URL');
   }
 
-  get apiToken(): string | undefined {
-    return this.configService.get<string>('GRAPHQL_API_TOKEN');
-  }
-
   async request<TData>(query: string, variables: Record<string, unknown>): Promise<TData> {
     if (!this.apiUrl) {
       throw new Error('GRAPHQL_API_URL is not configured.');
@@ -40,10 +36,6 @@ export class GraphqlClientService {
 
     if (locale) {
       headers['x-locale'] = locale;
-    }
-
-    if (this.apiToken && this.apiToken !== 'replace-me') {
-      headers.Authorization = `Bearer ${this.apiToken}`;
     }
 
     const response = await fetch(this.apiUrl, {

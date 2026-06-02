@@ -53,7 +53,6 @@ npm run start:mcp         # HTTP on :3001
 | Variable | Required | Description |
 | --- | --- | --- |
 | `GRAPHQL_API_URL` | yes | GraphQL API URL |
-| `GRAPHQL_API_TOKEN` | no | Bearer token for authenticated GraphQL APIs |
 | `GRAPHQL_BRAND_ID` | no | Optional `x-brand-id` header |
 | `GRAPHQL_LOCALE` | no | Optional `x-locale` header, e.g. `de`, `at`, `ch` |
 | `GRAPHQL_AIRPORT_SEARCH_QUERY` | no | Override the airport search query. Must accept a `$query: String!` variable. |
